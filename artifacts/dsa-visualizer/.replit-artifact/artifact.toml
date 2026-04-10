@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "AlgoViz AI - DSA Visualizer"
+version = "1.0.0"
+id = "artifacts/dsa-visualizer"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18577
+
+[services.development]
+run = "pnpm --filter @workspace/dsa-visualizer run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/dsa-visualizer", "run", "build" ]
+publicDir = "artifacts/dsa-visualizer/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18577"
+BASE_PATH = "/"

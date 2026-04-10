@@ -5,18 +5,28 @@
  * API specification
  * OpenAPI spec version: 0.1.0
  */
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import type {
+  MutationFunction,
   QueryFunction,
   QueryKey,
+  UseMutationOptions,
+  UseMutationResult,
   UseQueryOptions,
   UseQueryResult,
 } from "@tanstack/react-query";
 
-import type { HealthStatus } from "./api.schemas";
+import type {
+  AnalysisHistoryItem,
+  AnalysisResult,
+  AnalyzeProblemBody,
+  ErrorResponse,
+  HealthStatus,
+  PatternStat,
+} from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
-import type { ErrorType } from "../custom-fetch";
+import type { ErrorType, BodyType } from "../custom-fetch";
 
 type AwaitedInput<T> = PromiseLike<T> | T;
 
@@ -92,6 +102,416 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * Uses AI to analyze a DSA problem and generate visualization steps
+ * @summary Analyze a DSA problem
+ */
+export const getAnalyzeProblemUrl = () => {
+  return `/api/dsa/analyze`;
+};
+
+export const analyzeProblem = async (
+  analyzeProblemBody: AnalyzeProblemBody,
+  options?: RequestInit,
+): Promise<AnalysisResult> => {
+  return customFetch<AnalysisResult>(getAnalyzeProblemUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(analyzeProblemBody),
+  });
+};
+
+export const getAnalyzeProblemMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeProblem>>,
+    TError,
+    { data: BodyType<AnalyzeProblemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof analyzeProblem>>,
+  TError,
+  { data: BodyType<AnalyzeProblemBody> },
+  TContext
+> => {
+  const mutationKey = ["analyzeProblem"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof analyzeProblem>>,
+    { data: BodyType<AnalyzeProblemBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return analyzeProblem(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AnalyzeProblemMutationResult = NonNullable<
+  Awaited<ReturnType<typeof analyzeProblem>>
+>;
+export type AnalyzeProblemMutationBody = BodyType<AnalyzeProblemBody>;
+export type AnalyzeProblemMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Analyze a DSA problem
+ */
+export const useAnalyzeProblem = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof analyzeProblem>>,
+    TError,
+    { data: BodyType<AnalyzeProblemBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof analyzeProblem>>,
+  TError,
+  { data: BodyType<AnalyzeProblemBody> },
+  TContext
+> => {
+  return useMutation(getAnalyzeProblemMutationOptions(options));
+};
+
+/**
+ * Returns a list of recent DSA problem analyses
+ * @summary Get recent analysis history
+ */
+export const getGetAnalysisHistoryUrl = () => {
+  return `/api/dsa/history`;
+};
+
+export const getAnalysisHistory = async (
+  options?: RequestInit,
+): Promise<AnalysisHistoryItem[]> => {
+  return customFetch<AnalysisHistoryItem[]>(getGetAnalysisHistoryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAnalysisHistoryQueryKey = () => {
+  return [`/api/dsa/history`] as const;
+};
+
+export const getGetAnalysisHistoryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAnalysisHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAnalysisHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAnalysisHistoryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getAnalysisHistory>>
+  > = ({ signal }) => getAnalysisHistory({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAnalysisHistory>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAnalysisHistoryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAnalysisHistory>>
+>;
+export type GetAnalysisHistoryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get recent analysis history
+ */
+
+export function useGetAnalysisHistory<
+  TData = Awaited<ReturnType<typeof getAnalysisHistory>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getAnalysisHistory>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAnalysisHistoryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get a specific analysis by ID
+ */
+export const getGetAnalysisByIdUrl = (id: number) => {
+  return `/api/dsa/history/${id}`;
+};
+
+export const getAnalysisById = async (
+  id: number,
+  options?: RequestInit,
+): Promise<AnalysisResult> => {
+  return customFetch<AnalysisResult>(getGetAnalysisByIdUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAnalysisByIdQueryKey = (id: number) => {
+  return [`/api/dsa/history/${id}`] as const;
+};
+
+export const getGetAnalysisByIdQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAnalysisById>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAnalysisById>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAnalysisByIdQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAnalysisById>>> = ({
+    signal,
+  }) => getAnalysisById(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAnalysisById>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAnalysisByIdQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAnalysisById>>
+>;
+export type GetAnalysisByIdQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get a specific analysis by ID
+ */
+
+export function useGetAnalysisById<
+  TData = Awaited<ReturnType<typeof getAnalysisById>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAnalysisById>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAnalysisByIdQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Delete an analysis
+ */
+export const getDeleteAnalysisUrl = (id: number) => {
+  return `/api/dsa/history/${id}`;
+};
+
+export const deleteAnalysis = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteAnalysisUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAnalysisMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAnalysis>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAnalysis>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteAnalysis"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAnalysis>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteAnalysis(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAnalysisMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAnalysis>>
+>;
+
+export type DeleteAnalysisMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Delete an analysis
+ */
+export const useDeleteAnalysis = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAnalysis>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAnalysis>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteAnalysisMutationOptions(options));
+};
+
+/**
+ * Returns counts of analyzed problems grouped by pattern
+ * @summary Get pattern usage statistics
+ */
+export const getGetPatternStatsUrl = () => {
+  return `/api/dsa/patterns`;
+};
+
+export const getPatternStats = async (
+  options?: RequestInit,
+): Promise<PatternStat[]> => {
+  return customFetch<PatternStat[]>(getGetPatternStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetPatternStatsQueryKey = () => {
+  return [`/api/dsa/patterns`] as const;
+};
+
+export const getGetPatternStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getPatternStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPatternStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetPatternStatsQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getPatternStats>>> = ({
+    signal,
+  }) => getPatternStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getPatternStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetPatternStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getPatternStats>>
+>;
+export type GetPatternStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get pattern usage statistics
+ */
+
+export function useGetPatternStats<
+  TData = Awaited<ReturnType<typeof getPatternStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getPatternStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetPatternStatsQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

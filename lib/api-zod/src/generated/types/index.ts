@@ -6,4 +6,12 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./analysisHistoryItem";
+export * from "./analysisResult";
+export * from "./analyzeProblemBody";
+export * from "./codeSnippets";
+export * from "./errorResponse";
 export * from "./healthStatus";
+export * from "./patternStat";
+export * from "./visualizationStep";
+export * from "./visualizationStepState";

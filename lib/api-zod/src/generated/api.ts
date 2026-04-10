@@ -14,3 +14,95 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * Uses AI to analyze a DSA problem and generate visualization steps
+ * @summary Analyze a DSA problem
+ */
+export const AnalyzeProblemBody = zod.object({
+  problem: zod.string(),
+  customInput: zod.string().nullish(),
+});
+
+export const AnalyzeProblemResponse = zod.object({
+  id: zod.number(),
+  problem: zod.string(),
+  pattern: zod.string(),
+  difficulty: zod.string(),
+  brute_force: zod.string(),
+  optimal: zod.string(),
+  code: zod.object({
+    cpp: zod.string(),
+    java: zod.string(),
+  }),
+  steps: zod.array(
+    zod.object({
+      state: zod.record(zod.string(), zod.unknown()),
+      highlight: zod.array(zod.number().nullable()),
+      description: zod.string(),
+      type: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+});
+
+/**
+ * Returns a list of recent DSA problem analyses
+ * @summary Get recent analysis history
+ */
+export const GetAnalysisHistoryResponseItem = zod.object({
+  id: zod.number(),
+  problem: zod.string(),
+  pattern: zod.string(),
+  difficulty: zod.string(),
+  createdAt: zod.string(),
+});
+export const GetAnalysisHistoryResponse = zod.array(
+  GetAnalysisHistoryResponseItem,
+);
+
+/**
+ * @summary Get a specific analysis by ID
+ */
+export const GetAnalysisByIdParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetAnalysisByIdResponse = zod.object({
+  id: zod.number(),
+  problem: zod.string(),
+  pattern: zod.string(),
+  difficulty: zod.string(),
+  brute_force: zod.string(),
+  optimal: zod.string(),
+  code: zod.object({
+    cpp: zod.string(),
+    java: zod.string(),
+  }),
+  steps: zod.array(
+    zod.object({
+      state: zod.record(zod.string(), zod.unknown()),
+      highlight: zod.array(zod.number().nullable()),
+      description: zod.string(),
+      type: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Delete an analysis
+ */
+export const DeleteAnalysisParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
+ * Returns counts of analyzed problems grouped by pattern
+ * @summary Get pattern usage statistics
+ */
+export const GetPatternStatsResponseItem = zod.object({
+  pattern: zod.string(),
+  count: zod.number(),
+});
+export const GetPatternStatsResponse = zod.array(GetPatternStatsResponseItem);

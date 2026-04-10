@@ -1,67 +1,65 @@
 # AlgoViz AI 2.0
 
-## Overview
+An AI-powered DSA (Data Structures & Algorithms) problem visualizer. Paste any algorithm problem and get an interactive step-by-step visualization powered by OpenAI.
 
-AI-powered DSA (Data Structures & Algorithms) problem visualizer. Users can paste any DSA problem, and the app uses AI (OpenAI) to analyze it, generate step-by-step visualization data, and render interactive animations for arrays, trees, graphs, dynamic programming tables, stacks, linked lists, and more.
+## Architecture
 
-## Project Structure
+### Frontend — `artifacts/dsa-visualizer/`
+- React + Vite + TypeScript, served at `/`
+- Dark navy/indigo theme (Outfit + Space Mono fonts)
+- Pages: Home (main visualizer), History, AnalysisView, Playground
+- Visualizers: Array, Tree, Graph, DP table, Stack, Linked List, N-Queens, Recursion Tree, Matrix, Sorting Comparison
+- shadcn/ui component library
+- Auth: **Clerk is optional**. If `VITE_CLERK_PUBLISHABLE_KEY` is set, full Clerk auth activates. Otherwise the app works fully without authentication.
 
-```
-artifacts/
-  api-server/           ← Backend (Express + TypeScript)
-  dsa-visualizer/       ← Frontend (React + Vite + TailwindCSS)
+### Backend — `artifacts/api-server/`
+- Express + TypeScript, serves on port 8080
+- Routes mounted at `/api/dsa/` (analyze, history, patterns, individual analysis)
+- Auth: **Clerk middleware is optional**. Skipped when `CLERK_PUBLISHABLE_KEY` + `CLERK_SECRET_KEY` are absent.
+- OpenAI integration via **Replit AI Integrations** (no user API key needed — env vars are auto-provisioned)
 
-lib/
-  api-client-react/     ← Generated React Query hooks (from OpenAPI codegen)
-  api-spec/             ← OpenAPI spec (source of truth for API contract)
-  api-zod/              ← Generated Zod validation schemas
-  db/                   ← Database (Drizzle ORM + PostgreSQL)
-    src/schema/
-      analyses.ts       ← DSA analysis results table
-      conversations.ts  ← Conversations table
-      messages.ts       ← Messages table
-  integrations-openai-ai-server/  ← OpenAI server-side client
-  integrations-openai-ai-react/   ← OpenAI React hooks
-```
+### Shared Libraries
+- `lib/db/` — Drizzle ORM + PostgreSQL schema (analyses, conversations, messages tables)
+- `lib/api-spec/` — OpenAPI spec for DSA endpoints
+- `lib/api-zod/` — Zod validation schemas generated from OpenAPI
+- `lib/api-client-react/` — TanStack Query hooks for all API calls
+- `lib/openai-integrations/` — Replit AI Integrations OpenAI client wrapper
 
-## Stack
+## Environment Variables
 
-- **Monorepo tool**: pnpm workspaces
-- **Node.js version**: 24
-- **Package manager**: pnpm
-- **TypeScript version**: 5.9
-- **Frontend**: React 19 + Vite + TailwindCSS v4 + shadcn/ui
-- **Backend**: Express 5
-- **Database**: PostgreSQL + Drizzle ORM
-- **Validation**: Zod (`zod/v4`), `drizzle-zod`
-- **Auth**: Clerk (requires VITE_CLERK_PUBLISHABLE_KEY + CLERK_SECRET_KEY)
-- **AI**: OpenAI via Replit AI Integrations (AI_INTEGRATIONS_OPENAI_BASE_URL + AI_INTEGRATIONS_OPENAI_API_KEY)
-- **API codegen**: Orval (from OpenAPI spec)
-- **Build**: esbuild (CJS bundle)
+### Required for AI (auto-provisioned by Replit)
+- `AI_INTEGRATIONS_OPENAI_BASE_URL` — set automatically
+- `AI_INTEGRATIONS_OPENAI_API_KEY` — set automatically
 
-## Key Commands
+### Required for DB (auto-provisioned by Replit)
+- `DATABASE_URL` — PostgreSQL connection string
 
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/api-server run dev` — run API server locally
-- `pnpm --filter @workspace/dsa-visualizer run dev` — run frontend locally
+### Optional — for Clerk authentication
+- `VITE_CLERK_PUBLISHABLE_KEY` — from clerk.com dashboard
+- `CLERK_PUBLISHABLE_KEY` — same key for backend
+- `CLERK_SECRET_KEY` — from clerk.com dashboard
+- `VITE_CLERK_PROXY_URL` — set to `https://<your-domain>/api/__clerk` in production
 
-## Required Secrets
+### Session
+- `SESSION_SECRET` — already set
 
-- `VITE_CLERK_PUBLISHABLE_KEY` — Clerk publishable key (from clerk.com dashboard)
-- `CLERK_SECRET_KEY` — Clerk secret key (from clerk.com dashboard)
-- `VITE_CLERK_PROXY_URL` — Set to `https://<your-domain>/api/__clerk` for production
-- `AI_INTEGRATIONS_OPENAI_BASE_URL` — Auto-provisioned via Replit AI Integrations
-- `AI_INTEGRATIONS_OPENAI_API_KEY` — Auto-provisioned via Replit AI Integrations
-- `DATABASE_URL` — Auto-provisioned by Replit PostgreSQL
+## Development
 
-## Pages
+Both workflows must be running:
+1. **`artifacts/api-server: API Server`** — `pnpm --filter @workspace/api-server run dev`
+2. **`artifacts/dsa-visualizer: web`** — `pnpm --filter @workspace/dsa-visualizer run dev`
 
-- `/` — Home (analyze a DSA problem)
-- `/history` — Analysis history (requires sign-in)
-- `/analyze/:id` — View a specific analysis with visualization
-- `/playground` — Interactive data structures playground
-- `/sign-in` — Sign in
-- `/sign-up` — Sign up
+## Database
+
+Tables live in PostgreSQL (provisioned by Replit):
+- `analyses` — stores problem text, detected pattern, visualizer state, code, steps
+- `conversations` — chat sessions
+- `messages` — chat messages per conversation
+
+Run migrations: `pnpm --filter @workspace/db run push`
+
+## Key Design Decisions
+
+- **Auth is optional**: core visualization works without Clerk keys. Auth only gates history persistence.
+- **OpenAI via Replit**: no external API key management needed — Replit's AI Integrations handle billing and credentials.
+- **Clerk middleware is conditional**: backend checks for `CLERK_PUBLISHABLE_KEY` at startup and skips the middleware if absent, preventing 500 errors.

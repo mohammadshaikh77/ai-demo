@@ -1,11 +1,11 @@
 import { Link } from "wouter";
-import { useUser, SignOutButton } from "@clerk/react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Hexagon, Activity, History, FlaskConical } from "lucide-react";
+import { useAppAuth, SignOutButton } from "@/hooks/use-auth";
 
 export function Navbar() {
-  const { isSignedIn, user } = useUser();
+  const { isSignedIn, user } = useAppAuth();
   const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
 
   return (
@@ -30,12 +30,10 @@ export function Navbar() {
               <FlaskConical className="h-4 w-4" />
               Playground
             </Link>
-            {isSignedIn && (
-              <Link href="/history" className="hover:text-white transition-colors flex items-center gap-2">
-                <History className="h-4 w-4" />
-                History
-              </Link>
-            )}
+            <Link href="/history" className="hover:text-white transition-colors flex items-center gap-2">
+              <History className="h-4 w-4" />
+              History
+            </Link>
           </div>
 
           <div className="flex items-center gap-4 border-l border-white/10 pl-6">
@@ -47,9 +45,9 @@ export function Navbar() {
                   </Button>
                 </SignOutButton>
                 <Avatar className="h-8 w-8 border border-primary/20">
-                  <AvatarImage src={user.imageUrl} />
+                  <AvatarImage src={user?.imageUrl} />
                   <AvatarFallback className="bg-primary/10 text-primary">
-                    {user.firstName?.charAt(0) || user.username?.charAt(0) || "U"}
+                    {user?.firstName?.charAt(0) || user?.username?.charAt(0) || "U"}
                   </AvatarFallback>
                 </Avatar>
               </div>
